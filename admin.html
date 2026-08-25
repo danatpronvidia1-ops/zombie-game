@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Зомби Мастера</title>
+    <script src="https://socket.io"></script>
+    <style>
+        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        h1 { color: #ff3333; }
+        .box { background: #222; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 8px; border: 1px solid #333; }
+        input { padding: 12px; font-size: 16px; width: 60%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
+        button { padding: 12px 20px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
+        .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
+        .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
+        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; }
+        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>ПАНЕЛЬ УПРАВЛЕНИЯ ИГРОЙ</h1>
+    <div class="box">
+        <input type="text" id="p-name" placeholder="Имя друга...">
+        <button onclick="addFriend()">ДОБАВИТЬ</button>
+    </div>
+    <div class="list" id="players-list"></div>
+
+    <script>
+        const socket = io();
+        function addFriend() {
+            const name = document.getElementById('p-name').value.trim();
+            if(name) { socket.emit('add_player', { name: name }); document.getElementById('p-name').value = ''; }
+        }
+        function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
+        socket.on('update_all_players', (players) => {
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+            for(let name in players) {
+                const status = players[name];
+                const div = document.createElement('div');
+                div.className = 'p-item';
+                div.innerHTML = `<span><strong>${name}</strong> [${status.toUpperCase()}]</span>`;
+                if(status === 'survivors') {
+                    div.innerHTML += `<button class="btn-catch" onclick="move('${name}', 'caught')">ПОЙМАН</button>`;
+                } else if(status === 'caught') {
+                    div.innerHTML += `<button class="btn-dead" onclick="move('${name}', 'dead')">МЕРТВ</button>`;
+                }
+                list.appendChild(div);
+            }
+        });
+    </script>
+</body>
+</html>
