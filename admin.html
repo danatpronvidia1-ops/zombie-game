@@ -4,17 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель Зомби Мастера</title>
+    <link rel="apple-touch-icon" href="your_background.jpg">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #ff3333; }
+        h1 { color: #ff3333; font-size: 24px; }
         .box { background: #222; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 8px; border: 1px solid #333; }
-        input { padding: 12px; font-size: 16px; width: 60%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
-        button { padding: 12px 20px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
+        input { padding: 12px; font-size: 16px; width: 55%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
+        button { padding: 12px 15px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
         .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
         .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
-        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; }
-        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; }
+        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; border-radius: 5px; }
+        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; border-radius: 5px; }
+        .clear-panel { margin-top: 40px; padding: 10px; }
+        .btn-clear { background: #dc3545; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -25,6 +28,11 @@
     </div>
     <div class="list" id="players-list"></div>
 
+    <!-- КРАСНАЯ КНОПКА СБРОСА -->
+    <div class="clear-panel">
+        <button class="btn-clear" onclick="clearAll()">❌ ОЧИСТИТЬ ВСЕ СПИСКИ</button>
+    </div>
+
     <script>
         const socket = io();
         function addFriend() {
@@ -32,6 +40,14 @@
             if(name) { socket.emit('add_player', { name: name }); document.getElementById('p-name').value = ''; }
         }
         function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
+        
+        // Функция отправки команды сброса на сервер
+        function clearAll() {
+            if(confirm("Вы точно хотите стереть всех игроков и начать заново?")) {
+                socket.emit('clear_all_players');
+            }
+        }
+
         socket.on('update_all_players', (players) => {
             const list = document.getElementById('players-list');
             list.innerHTML = '';
