@@ -27,6 +27,13 @@ io.on('connection', (socket) => {
             }
         }
     });
+
+    // КНОПКА СБРОСА ИГРЫ
+    socket.on('clear_all_players', () => {
+        players = {}; // Полностью очищаем память сервера
+        io.emit('update_all_players', players);
+        console.log('Списки игроков успешно очищены администратором!');
+    });
 });
 
 const PORT = process.env.PORT || 3000;
