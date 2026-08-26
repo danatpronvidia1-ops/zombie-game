@@ -5,37 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zombie: Save or Death</title>
     <link rel="manifest" href="manifest.json">
-   <script src="/socket.io/socket.io.js"></script>
+    <link rel="apple-touch-icon" href="your_background.jpg">
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin:0; padding:0; background:#000; color:#fff; font-family:sans-serif; text-align:center;
-               background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; }
-        h1 { color:#e61919; font-size:24px; margin:0; padding-top:20px; }
-        .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; }
-        .column { width:30%; background:rgba(20,20,20,0.85); padding:10px; border-radius:8px; min-height:250px; }
-        .column h3 { margin:5px 0; font-size:14px; }
-        .survivors h3 { color:#32cd32; } .caught h3 { color:#ff8c00; } .dead h3 { color:#808080; }
-        .p-block { background:#333; padding:10px; margin:5px 0; border-radius:5px; font-weight:bold; font-size:14px; }
+               background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
+        h1 { color:#e61919; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(230,25,25,0.5); }
         
-        /* Экран звонка поверх всего */
-        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#900; z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
-        #alarm-screen h2 { font-size:32px; color:#fff; margin-bottom:30px; animation: blink 1s infinite; }
-        .btn-accept { padding:20px 40px; font-size:22px; font-weight:bold; background:#00ff00; color:#000; border:none; border-radius:10px; cursor:pointer; }
-        @keyframes blink { 0% { opacity:1; } 50% { opacity:0.3; } 100% { opacity:1; } }
+        /* Главный экран со списками (изначально скрыт) */
+        #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
+        .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; }
+        .column { width:32%; background:rgba(15,15,15,0.9); padding:10px; border-radius:8px; min-height:300px; border: 1px solid #222; }
+        .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1px; }
+        .survivors h3 { color:#32cd32; text-shadow: 0 0 5px rgba(50,205,50,0.3); } 
+        .caught h3 { color:#ff8c00; text-shadow: 0 0 5px rgba(255,140,0,0.3); } 
+        .dead h3 { color:#808080; }
+        .p-block { background:#222; padding:12px; margin:8px 0; border-radius:5px; font-weight:bold; font-size:15px; border-left: 4px solid #444; text-align:left; padding-left:15px; }
+        .survivors .p-block { border-left-color: #32cd32; }
+        .caught .p-block { border-left-color: #ff8c00; }
+        .dead .p-block { border-left-color: #555; opacity:0.5; }
+        
+        /* СТАРТОВОЕ ОКНО НА ВЕСЬ ЭКРАН */
+        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); 
+                          backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+                          z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+        .logo-title { color:#e61919; font-size:36px; font-weight:bold; margin-bottom:40px; letter-spacing:2px; text-shadow: 0 0 15px #e61919; }
+        .btn-start { padding:20px 50px; font-size:24px; font-weight:bold; background:#e61919; color:#fff; 
+                     border:none; border-radius:50px; cursor:pointer; box-shadow: 0 0 20px #e61919; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-start:active { transform: scale(0.95); box-shadow: 0 0 10px #e61919; }
+
+        /* Экран фатального звонка */
+        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#700; z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
+        #alarm-screen h2 { font-size:32px; color:#fff; margin-bottom:30px; animation: blink 0.8s infinite; text-shadow: 0 0 10px #000; }
+        .btn-accept { padding:20px 40px; font-size:22px; font-weight:bold; background:#32cd32; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow: 0 0 15px #32cd32; }
+        @keyframes blink { 0% { opacity:1; } 50% { opacity:0.2; } 100% { opacity:1; } }
     </style>
 </head>
 <body>
-    <h1>ZOMBIE: SAVE OR DEATH</h1>
-    <div class="tables">
-        <div class="column survivors"><h3>SURVIVORS</h3><div id="survivors-list"></div></div>
-        <div class="column caught"><h3>CAUGHT</h3><div id="caught-list"></div></div>
-        <div class="column dead"><h3>DEAD</h3><div id="dead-list"></div></div>
+
+    <!-- СТАРТОВЫЙ ЭКРАН ИГРЫ -->
+    <div id="start-overlay">
+        <div class="logo-title">ZOMBIE: SAVE OR DEATH</div>
+        <button class="btn-start" onclick="startGame()">НАЧАТЬ ИГРУ</button>
     </div>
 
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС ИГРЫ -->
+    <div id="game-screen">
+        <h1>ZOMBIE: SAVE OR DEATH</h1>
+        <div class="tables">
+            <div class="column survivors"><h3>SURVIVORS</h3><div id="survivors-list"></div></div>
+            <div class="column caught"><h3>CAUGHT</h3><div id="caught-list"></div></div>
+            <div class="column dead"><h3>DEAD</h3><div id="dead-list"></div></div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ЗВОНКА ТРЕВОГИ -->
     <div id="alarm-screen">
         <h2 id="alarm-text">ТЕБЯ ПОЙМАЛИ!</h2>
         <button class="btn-accept" onclick="stopAlarm()">ПРИНЯТЬ ЗАРАЖЕНИЕ</button>
     </div>
 
+    <!-- АУДИО ТРЕКИ -->
     <audio id="menu-music" src="меню.mp3" loop></audio>
     <audio id="alert-sound" src="Alert.mp3" loop></audio>
 
@@ -44,9 +74,19 @@
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
 
-        document.body.addEventListener('click', () => {
-            if (menuMusic.paused) menuMusic.play().catch(e => console.log(e));
-        }, { once: true });
+        // КЛИК ПО КНОПКЕ НАЧАТЬ ИГРУ
+        function startGame() {
+            // 1. Включаем фоновую музыку (браузер теперь её на 100% пропустит)
+            menuMusic.play().catch(e => console.log("Ошибка аудио:", e));
+            
+            // 2. Красиво убираем заставку
+            document.getElementById('start-overlay').style.display = 'none';
+            
+            // 3. Показываем саму игру
+            const gameScreen = document.getElementById('game-screen');
+            gameScreen.style.display = 'block';
+            setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
+        }
 
         socket.on('update_all_players', (players) => {
             document.getElementById('survivors-list').innerHTML = '';
@@ -64,10 +104,10 @@
         socket.on('play_network_sound', (data) => {
             menuMusic.pause();
             alertSound.currentTime = 0;
-            alertSound.play().catch(e => console.log(e));
+            alertSound.play().catch(e => console.log("Блокировка звука:", e));
             document.getElementById('alarm-text').innerText = data.message;
             document.getElementById('alarm-screen').style.display = 'flex';
-            if('vibrate' in navigator) navigator.vibrate([500, 500, 500]);
+            if('vibrate' in navigator) navigator.vibrate([500, 300, 500]);
         });
 
         function stopAlarm() {
