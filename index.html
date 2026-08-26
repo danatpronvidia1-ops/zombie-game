@@ -8,34 +8,39 @@
     <link rel="apple-touch-icon" href="your_background.jpg">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin:0; padding:0; background:#050505; color:#fff; font-family:sans-serif; text-align:center;
-               background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
-        h1 { color:#de9b35; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(222,155,53,0.3); font-family: 'Arial Black', sans-serif; letter-spacing: 2px; }
+        body { margin:0; padding:0; background:#050505; color:#fff; font-family:sans-serif; text-align:center; height:100vh; overflow:hidden; }
         
-        #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
+        /* КРУТОЙ ВИДЕОФОН НА ВЕСЬ ЭКРАН */
+        .video-background {
+            position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%;
+            width: auto; height: auto; z-index: -100; object-fit: cover; background: #000;
+        }
+        
+        h1 { color:#de9b35; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(222,155,53,0.3); font-family: 'Arial Black', sans-serif; letter-spacing: 2px; position: relative; z-index: 10; }
+        
+        #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; position: relative; z-index: 10; }
         .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; gap: 10px; }
         
-        .column { width:33%; background:rgba(20,24,30,0.95); padding:15px; border-radius:4px; min-height:380px; border: 2px solid #1b2228; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); box-sizing: border-box; }
+        /* Сделали колонки чуть более прозрачными, чтобы было видно живое видео сзади */
+        .column { width:33%; background:rgba(15, 20, 26, 0.85); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); padding:15px; border-radius:4px; min-height:380px; border: 2px solid #1b2228; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); box-sizing: border-box; }
         .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1.5px; font-family: 'Arial Black', sans-serif; padding-bottom: 10px; border-bottom: 1px solid #2c3640; text-transform: uppercase; }
         .survivors h3 { color:#5d79ae; text-shadow: 0 0 5px rgba(93,121,174,0.4); } 
         .caught h3 { color:#ff8c00; text-shadow: 0 0 5px rgba(255,140,0,0.4); } 
         .dead h3 { color:#eb4b4b; text-shadow: 0 0 5px rgba(235,75,75,0.4); }
         
-        .p-block { background:#12161c; padding:12px; margin:10px 0; border-radius:3px; border: 1px solid #232b35; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
+        .p-block { background:rgba(18, 22, 28, 0.9); padding:12px; margin:10px 0; border-radius:3px; border: 1px solid #232b35; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
         .p-info { text-align: left; }
         .p-name { font-weight: bold; font-size: 16px; display: block; }
         .p-stats { font-size: 11px; color: #64788c; display: block; margin-top: 3px; }
         
         .survivors .p-block { border-left: 5px solid #5d79ae; } 
-        .caught .p-block { border-left: 5px solid #ff8c00; background: rgba(30,20,10,0.4); } 
+        .caught .p-block { border-left: 5px solid #ff8c00; background: rgba(30,20,10,0.5); } 
         .dead .p-block { border-left: 5px solid #eb4b4b; opacity: 0.6; } 
 
-        /* САМЫЙ ПЕРВЫЙ ЭКРАН С ЗЕЛЕНОЙ КНОПКОЙ */
         #intro-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:11000; display:flex; justify-content:center; align-items:center; }
         .btn-green-start { padding:25px 90px; font-size:28px; font-weight:bold; background:#28a745; color:#fff; border:none; border-radius:50px; cursor:pointer; font-family:'Arial Black', sans-serif; box-shadow: 0 0 30px rgba(40,167,69,0.6); text-transform:uppercase; transition: transform 0.1s; }
         .btn-green-start:active { transform: scale(0.95); }
         
-        /* ВТОРОЙ ЭКРАН — CS:GO МАТЧ НАЙДЕН */
         #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:none; justify-content:center; align-items:center; flex-direction:column; }
         .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 15px rgba(222,155,53,0.4); }
         .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
@@ -50,19 +55,21 @@
 </head>
 <body>
 
-    <!-- САМАЯ ПЕРВАЯ ЗЕЛЕНАЯ КНОПКА -->
+    <!-- ЭЛЕМЕНТ ТЕГА ДЛЯ ВИДЕО ТРАНСЛЯЦИИ (работает без звука автоматически) -->
+    <video autoplay loop muted playsinline class="video-background" id="bg-video">
+        <source src="zombie_bg.mp4" type="video/mp4">
+    </video>
+
     <div id="intro-overlay">
         <button class="btn-green-start" onclick="initGameAudio()">НАЧАТЬ</button>
     </div>
 
-    <!-- ВТОРОЙ ЭКРАН: МАТЧ НАЙДЕН -->
     <div id="start-overlay">
         <div class="logo-title">МАТЧ НАЙДЕН!</div>
         <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
         <button class="btn-start" onclick="startGame()">ПРИНЯТЬ</button>
     </div>
 
-    <!-- ИНТЕРФЕЙС ИГРЫ -->
     <div id="game-screen">
         <h1>ZOMBIE: SAVE OR DEATH</h1>
         <div class="tables">
@@ -74,40 +81,36 @@
 
     <div id="alarm-screen">
         <h2 id="alarm-text">ВЫ БЫЛИ ЛИКВИДИРОВАНЫ!</h2>
-        <button class="btn-accept" onclick="stopAlarm()">ХОРОШО</button>
+        <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
 
-    <!-- НАСТРОЙКА АУДИО С КОРРЕКТНЫМИ АТРИБУТАМИ -->
     <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
     <audio id="menu-music" src="menu.mp3" preload="auto"></audio> 
     <audio id="alert-sound" src="Alert.mp3" loop preload="auto"></audio>
-    <audio id="csgo-sound" src="click_sound.mp3"></audio>
-
 
     <script>
         const socket = io();
         const csgoSound = document.getElementById('csgo-sound');
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
+        const bgVideo = document.getElementById('bg-video');
 
-        // ЖЁСТКАЯ АКТИВАЦИЯ AUDIO CONTEXT КЛИКОМ ПО КНОПКЕ "НАЧАТЬ"
+        function playIntro() {
+            csgoSound.play().catch(e => console.log("Ждем клика"));
+        }
+        window.addEventListener('DOMContentLoaded', playIntro);
+        document.body.addEventListener('click', playIntro, { once: true });
+        document.body.addEventListener('touchstart', playIntro, { once: true });
+
         function initGameAudio() {
-            // Принудительно запускаем звук CS:GO (браузер теперь 100% пропустит, так как был клик)
             csgoSound.currentTime = 0;
             csgoSound.loop = true;
-            
-            let playPromise = csgoSound.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Ошибка аудио устройства, пробуем еще раз...");
-                    csgoSound.play();
-                });
-            }
+            csgoSound.play().catch(e => console.log(e));
 
-            // Удаляем зеленую кнопку с экрана
+            // Запускаем видео на смартфонах при первом клике (iOS требует этого)
+            if(bgVideo) bgVideo.play().catch(e => console.log(e));
+
             document.getElementById('intro-overlay').remove();
-
-            // Открываем экран «Матч найден» как в CS:GO
             document.getElementById('start-overlay').style.display = 'flex';
         }
 
