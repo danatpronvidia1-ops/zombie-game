@@ -29,7 +29,6 @@
         .caught .p-block { border-left: 5px solid #ff8c00; background: rgba(30,20,10,0.4); } 
         .dead .p-block { border-left: 5px solid #eb4b4b; opacity: 0.6; } 
         
-        /* СТИЛИ ДЛЯ РАНГОВ CS:GO */
         .rank { font-size: 10px; padding: 4px 6px; border-radius: 2px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif; text-align: center; }
         .rank-silver { background: #2c3641; color: #a2a2a2; border: 1px solid #444; } 
         .rank-sem { background: #34495e; color: #99b1cb; border: 1px solid #5d79ae; } 
@@ -38,7 +37,7 @@
         .rank-global { background: linear-gradient(135deg, #1d2b45 0%, #3a6096 50%, #1d2b45 100%); color: #fff; border: 1px solid #5d93e2; box-shadow: 0 0 10px #3a6096; text-shadow: 0 1px 2px #000; } 
         
         #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-        .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; }
+        .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 15px rgba(222,155,53,0.4); }
         .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
         
         .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; box-shadow: 0 5px 25px rgba(79,126,41,0.5); text-transform: uppercase; }
@@ -47,17 +46,18 @@
         #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(138,23,23,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
         #alarm-screen h2 { font-size:36px; color:#fff; margin-bottom:40px; font-family:'Arial Black', sans-serif; animation: blink 0.6s infinite; }
         .btn-accept { padding:22px 50px; font-size:22px; font-weight:bold; background:#4caf50; color:#fff; border:2px solid #388e3c; border-radius:4px; cursor:pointer; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
+    <!-- СТАРТОВЫЙ ЭКРАН -->
     <div id="start-overlay">
         <div class="logo-title">МАТЧ НАЙДЕН!</div>
         <div class="logo-subtitle">ПОДТВЕРДИТЕ ГОТОВНОСТЬ К ИГРЕ</div>
         <button class="btn-start" onclick="startGame()">ПРИНЯТЬ</button>
     </div>
 
+    <!-- ИНТЕРФЕЙС ИГРЫ -->
     <div id="game-screen">
         <h1>ZOMBIE: SAVE OR DEATH</h1>
         <div class="tables">
@@ -72,6 +72,7 @@
         <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
 
+    <!-- АУДИО ТРЕКИ -->
     <audio id="csgo-sound" src="csgo_accept.mp3" autoplay></audio>
     <audio id="menu-music" src="menu.mp3"></audio> 
     <audio id="alert-sound" src="Alert.mp3" loop></audio>
@@ -82,6 +83,14 @@
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
 
+        // Жёстко заставляем звук CS:GO включиться при открытии
+        function playIntro() {
+            csgoSound.play().catch(e => console.log("Ждем клика для звука"));
+        }
+        window.addEventListener('DOMContentLoaded', playIntro);
+        document.body.addEventListener('click', playIntro, { once: true });
+        document.body.addEventListener('touchstart', playIntro, { once: true });
+
         function startGame() {
             csgoSound.pause();
             menuMusic.play().catch(e => console.log(e));
@@ -91,7 +100,6 @@
             setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
         }
 
-        // Функция расчета ранга на клиенте
         function getRankConfig(xp) {
             if (xp >= 100) return { name: '👑 GLOBAL ELITE', class: 'rank-global' };
             if (xp >= 60)  return { name: '🦅 LEM', class: 'rank-lem' };
@@ -112,7 +120,6 @@
                 
                 const rConf = getRankConfig(pData.xp || 0);
                 
-                // Отрисовываем имя и блок статистики под ним
                 div.innerHTML = `
                     <div class="p-info">
                         <span class="p-name">${name}</span>
