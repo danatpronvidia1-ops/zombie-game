@@ -8,68 +8,68 @@
     <link rel="apple-touch-icon" href="your_background.jpg">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin:0; padding:0; background:#000; color:#fff; font-family:sans-serif; text-align:center;
+        body { margin:0; padding:0; background:#050505; color:#fff; font-family:sans-serif; text-align:center;
                background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
-        h1 { color:#e61919; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(230,25,25,0.5); }
+        h1 { color:#de9b35; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(222,155,53,0.3); font-family: 'Arial Black', sans-serif; letter-spacing: 2px; }
         
         #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
         .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; }
-        .column { width:32%; background:rgba(15,15,15,0.9); padding:10px; border-radius:8px; min-height:300px; border: 1px solid #222; }
-        .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1px; }
-        .survivors h3 { color:#32cd32; text-shadow: 0 0 5px rgba(50,205,50,0.3); } 
-        .caught h3 { color:#ff8c00; text-shadow: 0 0 5px rgba(255,140,0,0.3); } 
-        .dead h3 { color:#808080; }
+        .column { width:32%; background:rgba(20,24,30,0.95); padding:15px; border-radius:4px; min-height:350px; border: 2px solid #1b2228; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1.5px; font-family: sans-serif; padding-bottom: 10px; border-bottom: 1px solid #2c3640; }
+        .survivors h3 { color:#5d79ae; text-shadow: 0 0 5px rgba(93,121,174,0.4); } 
+        .caught h3 { color:#ff8c00; text-shadow: 0 0 5px rgba(255,140,0,0.4); } 
+        .dead h3 { color:#eb4b4b; text-shadow: 0 0 5px rgba(235,75,75,0.4); }
         
-        .p-block { background:#222; padding:12px; margin:8px 0; border-radius:5px; font-weight:bold; font-size:15px; border-left: 4px solid #444; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; }
-        .survivors .p-block { border-left-color: #32cd32; }
-        .caught .p-block { border-left-color: #ff8c00; }
-        .dead .p-block { border-left-color: #555; opacity:0.5; }
+        .p-block { background:#12161c; padding:12px; margin:10px 0; border-radius:3px; border: 1px solid #232b35; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
+        .p-info { text-align: left; }
+        .p-name { font-weight: bold; font-size: 15px; display: block; }
+        .p-stats { font-size: 10px; color: #64788c; display: block; margin-top: 2px; }
         
-        /* КРУТЫЕ СТИЛИ ДЛЯ РАНГОВ */
-        .rank { font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .rank-silver { background: #444; color: #dfdfdf; border: 1px solid #666; box-shadow: 0 0 5px rgba(255,255,255,0.1); }
-        .rank-infected { background: #d35400; color: #fff; border: 1px solid #e67e22; box-shadow: 0 0 8px #ff8c00; animation: pulse 1.5s infinite; }
-        .rank-zombie { background: #500; color: #ff3333; border: 1px solid #700; text-shadow: 0 0 3px #000; }
+        .survivors .p-block { border-left: 5px solid #5d79ae; } 
+        .caught .p-block { border-left: 5px solid #ff8c00; background: rgba(30,20,10,0.4); } 
+        .dead .p-block { border-left: 5px solid #eb4b4b; opacity: 0.6; } 
         
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        /* СТИЛИ ДЛЯ РАНГОВ CS:GO */
+        .rank { font-size: 10px; padding: 4px 6px; border-radius: 2px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif; text-align: center; }
+        .rank-silver { background: #2c3641; color: #a2a2a2; border: 1px solid #444; } 
+        .rank-sem { background: #34495e; color: #99b1cb; border: 1px solid #5d79ae; } 
+        .rank-mg { background: #8e44ad; color: #fff; border: 1px solid #9b59b6; box-shadow: 0 0 5px #8e44ad; } 
+        .rank-lem { background: #d35400; color: #fff; border: 1px solid #e67e22; box-shadow: 0 0 8px #ff8c00; } 
+        .rank-global { background: linear-gradient(135deg, #1d2b45 0%, #3a6096 50%, #1d2b45 100%); color: #fff; border: 1px solid #5d93e2; box-shadow: 0 0 10px #3a6096; text-shadow: 0 1px 2px #000; } 
         
-        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(10,10,10,0.95); 
-                          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-                          z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-        .logo-title { color:#fff; font-size:32px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; }
-        .logo-subtitle { color:#888; font-size:16px; margin-bottom:40px; }
+        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+        .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; }
+        .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
         
-        .btn-start { padding:22px 60px; font-size:26px; font-weight:bold; background:#4caf50; color:#fff; 
-                     border:2px solid #388e3c; border-radius:5px; cursor:pointer; 
-                     box-shadow: 0 0 25px rgba(76,175,80,0.4); transition: all 0.2s ease; text-transform: uppercase; }
-        .btn-start:active { transform: scale(0.95); box-shadow: 0 0 10px rgba(76,175,80,0.6); background:#388e3c; }
+        .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; box-shadow: 0 5px 25px rgba(79,126,41,0.5); text-transform: uppercase; }
+        .btn-start:hover { background: linear-gradient(to bottom, #6b9638 0%, #486b25 100%); }
 
-        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#700; z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
-        #alarm-screen h2 { font-size:32px; color:#fff; margin-bottom:30px; animation: blink 0.8s infinite; text-shadow: 0 0 10px #000; }
-        .btn-accept { padding:20px 40px; font-size:22px; font-weight:bold; background:#32cd32; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow: 0 0 15px #32cd32; }
-        @keyframes blink { 0% { opacity:1; } 50% { opacity:0.2; } 100% { opacity:1; } }
+        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(138,23,23,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
+        #alarm-screen h2 { font-size:36px; color:#fff; margin-bottom:40px; font-family:'Arial Black', sans-serif; animation: blink 0.6s infinite; }
+        .btn-accept { padding:22px 50px; font-size:22px; font-weight:bold; background:#4caf50; color:#fff; border:2px solid #388e3c; border-radius:4px; cursor:pointer; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="start-overlay">
-        <div class="logo-title">ИГРА НАЙДЕНА!</div>
-        <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
-        <button class="btn-start" onclick="startGame()">ПРИНЯТЬ ИГРУ</button>
+        <div class="logo-title">МАТЧ НАЙДЕН!</div>
+        <div class="logo-subtitle">ПОДТВЕРДИТЕ ГОТОВНОСТЬ К ИГРЕ</div>
+        <button class="btn-start" onclick="startGame()">ПРИНЯТЬ</button>
     </div>
 
     <div id="game-screen">
         <h1>ZOMBIE: SAVE OR DEATH</h1>
         <div class="tables">
-            <div class="column survivors"><h3>SURVIVORS</h3><div id="survivors-list"></div></div>
-            <div class="column caught"><h3>CAUGHT</h3><div id="caught-list"></div></div>
-            <div class="column dead"><h3>DEAD</h3><div id="dead-list"></div></div>
+            <div class="column survivors"><h3>ВЫЖИВШИЕ</h3><div id="survivors-list"></div></div>
+            <div class="column caught"><h3>ОБНАРУЖЕНЫ</h3><div id="caught-list"></div></div>
+            <div class="column dead"><h3>ЛИКВИДИРОВАНЫ</h3><div id="dead-list"></div></div>
         </div>
     </div>
 
     <div id="alarm-screen">
-        <h2 id="alarm-text">ТЕБЯ ПОЙМАЛИ!</h2>
-        <button class="btn-accept" onclick="stopAlarm()">ПРИНЯТЬ ЗАРАЖЕНИЕ</button>
+        <h2 id="alarm-text">ВЫ БЫЛИ ЛИКВИДИРОВАНЫ!</h2>
+        <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
 
     <audio id="csgo-sound" src="csgo_accept.mp3" autoplay></audio>
@@ -82,41 +82,46 @@
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
 
-        window.addEventListener('DOMContentLoaded', () => {
-            csgoSound.play().catch(e => {
-                document.body.addEventListener('touchstart', () => { csgoSound.play(); }, { once: true });
-                document.body.addEventListener('click', () => { csgoSound.play(); }, { once: true });
-            });
-        });
-
         function startGame() {
             csgoSound.pause();
             menuMusic.play().catch(e => console.log(e));
-            const overlay = document.getElementById('start-overlay');
-            overlay.style.opacity = '0';
-            setTimeout(() => { overlay.remove(); }, 500); 
+            document.getElementById('start-overlay').remove(); 
             const gameScreen = document.getElementById('game-screen');
             gameScreen.style.display = 'block';
             setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
+        }
+
+        // Функция расчета ранга на клиенте
+        function getRankConfig(xp) {
+            if (xp >= 100) return { name: '👑 GLOBAL ELITE', class: 'rank-global' };
+            if (xp >= 60)  return { name: '🦅 LEM', class: 'rank-lem' };
+            if (xp >= 30)  return { name: '⭐ MG I', class: 'rank-mg' };
+            if (xp >= 10)  return { name: '⭐ SILVER SEM', class: 'rank-sem' };
+            return { name: '⚪ SILVER I', class: 'rank-silver' };
         }
 
         socket.on('update_all_players', (players) => {
             document.getElementById('survivors-list').innerHTML = '';
             document.getElementById('caught-list').innerHTML = '';
             document.getElementById('dead-list').innerHTML = '';
+            
             for (let name in players) {
-                const status = players[name];
+                const pData = players[name];
                 const div = document.createElement('div');
                 div.className = 'p-block';
                 
-                // СИСТЕМА РАНГОВ СО ЗНАЧКАМИ
-                let rankName = '⚪ SILVER I';
-                let rankClass = 'rank-silver';
-                if(status === 'caught') { rankName = '🟠 INFECTED'; rankClass = 'rank-infected'; }
-                if(status === 'dead') { rankName = '🔴 ZOMBIE BOSS'; rankClass = 'rank-zombie'; }
+                const rConf = getRankConfig(pData.xp || 0);
                 
-                div.innerHTML = `<span>${name}</span> <span class="rank ${rankClass}">${rankName}</span>`;
-                document.getElementById(`${status}-list`).appendChild(div);
+                // Отрисовываем имя и блок статистики под ним
+                div.innerHTML = `
+                    <div class="p-info">
+                        <span class="p-name">${name}</span>
+                        <span class="p-stats">Выжил: ${pData.survivedCount || 0} | Пойман: ${pData.caughtCount || 0}</span>
+                    </div>
+                    <span class="rank ${rConf.class}">${rConf.name}</span>
+                `;
+                
+                document.getElementById(`${pData.status}-list`).appendChild(div);
             }
         });
 
@@ -126,7 +131,6 @@
             alertSound.play().catch(e => console.log(e));
             document.getElementById('alarm-text').innerText = data.message;
             document.getElementById('alarm-screen').style.display = 'flex';
-            if('vibrate' in navigator) navigator.vibrate();
         });
 
         function stopAlarm() {
@@ -134,8 +138,6 @@
             document.getElementById('alarm-screen').style.display = 'none';
             menuMusic.play().catch(e => console.log(e));
         }
-
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
     </script>
 </body>
 </html>
