@@ -32,14 +32,12 @@
 
         #intro-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:11000; display:flex; justify-content:center; align-items:center; }
         .btn-green-start { padding:25px 90px; font-size:28px; font-weight:bold; background:#28a745; color:#fff; border:none; border-radius:50px; cursor:pointer; font-family:'Arial Black', sans-serif; box-shadow: 0 0 30px rgba(40,167,69,0.6); text-transform:uppercase; transition: transform 0.1s; }
-        .btn-green-start:active { transform: scale(0.95); }
         
         #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:none; justify-content:center; align-items:center; flex-direction:column; }
         .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 15px rgba(222,155,53,0.4); }
         .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
         
-        .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; box-shadow: 0 5px 25px rgba(79,126,41,0.5); text-transform: uppercase; letter-spacing: 1px; }
-        .btn-start:hover { background: linear-gradient(to bottom, #6b9638 0%, #486b25 100%); }
+        .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; box-shadow: 0 5px 25px rgba(79,126,41,0.5); text-transform: uppercase; }
 
         #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(138,23,23,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
         #alarm-screen h2 { font-size:36px; color:#fff; margin-bottom:40px; font-family:'Arial Black', sans-serif; animation: blink 0.6s infinite; }
@@ -75,12 +73,18 @@
     <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
     <audio id="menu-music" src="menu.mp3" preload="auto" loop></audio> 
     <audio id="alert-sound" src="Alert.mp3" preload="auto"></audio>
+    <audio id="win-sound" src="win_speech.mp3" preload="auto"></audio>
 
     <script>
         const socket = io();
         const csgoSound = document.getElementById('csgo-sound');
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
+        const winSound = document.getElementById('win-sound');
+        
+        let intervalTimer = null;
+        let lastSurvivorSignaled = false;
+        let speechPlayedInThisRound = false; // ТРИГГЕР-ПРЕДОХРАНИТЕЛЬ ОТ ПОВТОРОВ
 
         function playIntro() { csgoSound.play().catch(e => console.log("Ждем клика")); }
         window.addEventListener('DOMContentLoaded', playIntro);
@@ -103,14 +107,28 @@
             const gameScreen = document.getElementById('game-screen');
             gameScreen.style.display = 'block';
             setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
+
+            if(intervalTimer) clearInterval(intervalTimer);
+            intervalTimer = setInterval(() => {
+                csgoSound.loop = false;
+                csgoSound.currentTime = 0;
+                csgoSound.play().catch(e => console.log(e));
+            }, 300000); 
         }
 
         socket.on('update_all_players', (players) => {
             document.getElementById('survivors-list').innerHTML = '';
             document.getElementById('caught-list').innerHTML = '';
             document.getElementById('dead-list').innerHTML = '';
+            
+            let survivorCount = 0;
+            let totalPlayersCount = 0;
+
             for (let name in players) {
+                totalPlayersCount++;
                 const pData = players[name];
+                if(pData.status === 'survivors') survivorCount++;
+
                 const div = document.createElement('div');
                 div.className = 'p-block';
                 div.innerHTML = `
@@ -120,6 +138,33 @@
                     </div>
                 `;
                 document.getElementById(`${pData.status}-list`).appendChild(div);
+            }
+
+            // ЕСЛИ ВСЕ ИГРОКИ СБРОШЕНЫ (Новый раунд в админке), СБРАСЫВАЕМ ФЛАГ РЕЧИ
+            let isAllSurvivors = true;
+            for(let name in players) {
+                if(players[name].status !== 'survivors') isAllSurvivors = false;
+            }
+            if(isAllSurvivors || totalPlayersCount === 0) {
+                speechPlayedInThisRound = false;
+                lastSurvivorSignaled = false;
+            }
+
+            // ПРОВЕРКА НА ПОСЛЕДНЕГО ВЫЖИВШЕГО
+            if (survivorCount === 1 && totalPlayersCount > 1) {
+                // Если речь в этом раунде ЕЩЕ НЕ ИГРАЛА, запускаем её
+                if (!speechPlayedInThisRound && !lastSurvivorSignaled) {
+                    menuMusic.pause();
+                    winSound.currentTime = 0;
+                    winSound.play().catch(e => console.log(e));
+                    
+                    winSound.onended = () => { menuMusic.play().catch(e => console.log(e)); };
+                    
+                    lastSurvivorSignaled = true;
+                    speechPlayedInThisRound = true; // Блокируем повторные запуски речи
+                }
+            } else if (survivorCount !== 1) {
+                lastSurvivorSignaled = false;
             }
         });
 
@@ -133,9 +178,3 @@
 
         function stopAlarm() {
             alertSound.pause();
-            document.getElementById('alarm-screen').style.display = 'none';
-            menuMusic.play().catch(e => console.log(e));
-        }
-    </script>
-</body>
-</html>
