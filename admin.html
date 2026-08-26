@@ -5,41 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель Зомби Мастера</title>
     <link rel="apple-touch-icon" href="your_background.jpg">
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #ff3333; font-size: 24px; }
-        .box { background: #222; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 8px; border: 1px solid #333; }
-        input { padding: 12px; font-size: 16px; width: 55%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
-        button { padding: 12px 15px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
-        .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
+        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 15px; }
+        h1 { color: #ff3333; font-size: 22px; margin-bottom: 10px; }
+        .box { background: #222; padding: 15px; margin: 10px auto; max-width: 600px; border-radius: 8px; border: 1px solid #333; }
+        input { padding: 12px; font-size: 16px; width: 50%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
+        button { padding: 12px 15px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        .list { margin-top: 15px; text-align: left; max-width: 600px; margin: 15px auto; }
         .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
         .p-info { display: flex; flex-direction: column; }
-        .p-name { font-weight: bold; font-size: 16px; }
+        .p-name { font-weight: bold; font-size: 15px; }
         .p-sub { font-size: 12px; color: #888; margin-top: 4px; }
         .xp-btn { padding: 2px 8px; font-size: 12px; background: #444; margin-left: 3px; border-radius: 3px; display: inline-block; color:#fff; border:none; cursor: pointer; }
         .btn-catch { background: #d35400; padding: 8px 12px; font-size: 13px; font-weight:bold; border-radius: 5px; color:#fff; border:none; cursor: pointer; }
         .btn-dead { background: #555; padding: 8px 12px; font-size: 13px; font-weight:bold; border-radius: 5px; color:#fff; border:none; cursor: pointer; }
-        .clear-panel { margin-top: 40px; padding: 10px; }
-        .btn-clear { background: #28a745; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; color:#fff; border:none; cursor: pointer; margin-bottom: 10px; }
-        .btn-reset-all { background: #dc3545; width: 100%; max-width: 500px; padding: 10px; font-size: 14px; border-radius: 8px; color:#fff; border:none; cursor: pointer; opacity: 0.7; }
+        
+        /* КИБЕРСПОРТИВНЫЙ РАДАР ДВОРА */
+        #radar-container { margin: 15px auto; width: 100%; max-width: 600px; height: 450px; border: 2px solid #de9b35; border-radius: 6px; overflow: hidden; box-shadow: 0 0 20px rgba(222,155,53,0.3); }
+        #map { width: 100%; height: 100%; background: #080b0f; }
+        
+        .clear-panel { margin-top: 20px; padding: 10px; }
+        .btn-clear { background: #28a745; width: 100%; max-width: 600px; padding: 15px; font-size: 16px; border-radius: 8px; color:#fff; border:none; cursor: pointer; margin-bottom: 10px; }
+        .btn-reset-all { background: #dc3545; width: 100%; max-width: 600px; padding: 10px; font-size: 13px; border-radius: 8px; color:#fff; border:none; cursor: pointer; opacity: 0.7; }
     </style>
 </head>
 <body>
-    <h1>ПАНЕЛЬ УПРАВЛЕНИЯ ИГРОЙ</h1>
+    <h1>ТАКТИЧЕСКИЙ РАДАР: ДВОР</h1>
+    
+    <div id="radar-container">
+        <div id="map"></div>
+    </div>
+
     <div class="box">
         <input type="text" id="p-name" placeholder="Имя друга...">
         <button onclick="addFriend()">ДОБАВИТЬ</button>
     </div>
+    
     <div class="list" id="players-list"></div>
 
     <div class="clear-panel">
         <button class="btn-clear" onclick="clearAll()">🔁 СЛЕДУЮЩИЙ РАУНД (ВЫЖИВШИМ +2 XP)</button>
-        <button class="btn-reset-all" onclick="resetDatabase()">⚠️ ПОЛНОЕ ОБНУЛЕНИЕ ВСЕЙ СТАТИСТИКИ</button>
+        <button class="btn-reset-all" onclick="resetDatabase()">⚠️ ПОЛНОЕ ОБНУЛЕНИЕ СТАТИСТИКИ</button>
     </div>
 
     <script>
         const socket = io();
+        let map, markers = {};
+
+        // ВАЖНО: Границы твоего двора на реальной карте мира. 
+        // Если маркеры будут смещены, мы легко поправим эти 4 цифры координат!
+        const southWest = [51.1270, 71.4220]; 
+        const northEast = [51.1300, 71.4270];
+        const bounds = [southWest, northEast];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Создаем карту, привязанную к координатам двора
+            map = L.map('map', {
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0
+            }).setView([51.1285, 71.4245], 17);
+
+            // ЗАГРУЖАЕМ ТВОЮ КАРТИНКУ ДВОРА КАК ПОДЛОЖКУ РАДАРА!
+            L.imageOverlay('dvor.jpg', bounds).addTo(map);
+        });
+
         function addFriend() {
             const name = document.getElementById('p-name').value.trim();
             if(name) { socket.emit('add_player', { name: name }); document.getElementById('p-name').value = ''; }
@@ -47,11 +79,12 @@
         function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
         function changeXP(name, amount) { socket.emit('change_player_xp', { name: name, amount: amount }); }
         function clearAll() { if(confirm("Начать новый раунд?")) { socket.emit('clear_all_players'); } }
-        function resetDatabase() { if(confirm("Полностью стереть всю историю побед?")) { socket.emit('reset_entire_database'); } }
+        function resetDatabase() { if(confirm("Полностью стереть всю статистику?")) { socket.emit('reset_entire_database'); } }
 
         socket.on('update_all_players', (players) => {
             const list = document.getElementById('players-list');
             list.innerHTML = '';
+            
             for(let name in players) {
                 const pData = players[name];
                 const status = pData.status;
@@ -59,12 +92,10 @@
 
                 const div = document.createElement('div');
                 div.className = 'p-item';
-
                 div.innerHTML = `
                     <div class="p-info">
                         <strong class="p-name">${name}</strong>
-                        <span class="p-sub">
-                            XP: ${xp} 
+                        <span class="p-sub">XP: ${xp} 
                             <button class="xp-btn" onclick="changeXP('${name}', 5)">+5</button>
                             <button class="xp-btn" onclick="changeXP('${name}', -5)">-5</button>
 
@@ -79,6 +110,27 @@
                     div.innerHTML += `<button class="btn-dead" onclick="move('${name}', 'dead')">МЕРТВ</button>`;
                 }
                 list.appendChild(div);
+
+                // ОТОБРАЖЕНИЕ ПАЦАНОВ НА ТВОЕЙ КАРТЕ ДВОРА
+                if (pData.lat && pData.lng && map) {
+                    let dotColor = '#3a6096'; // Неоново-синий маркер (Выживший спецназ)
+                    if(status === 'caught') dotColor = '#d35400'; // Оранжевый (Обнаружен)
+                    if(status === 'dead') dotColor = '#cc3333'; // Красный (Зомби)
+
+                    if (markers[name]) {
+                        markers[name].setLatLng([pData.lat, pData.lng]);
+                        markers[name].setStyle({ fillColor: dotColor });
+                    } else {
+                        markers[name] = L.circleMarker([pData.lat, pData.lng], {
+                            radius: 9,
+                            fillColor: dotColor,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        }).addTo(map).bindPopup(`<b>${name}</b>`).openPopup();
+                    }
+                }
             }
         });
     </script>
