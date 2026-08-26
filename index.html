@@ -7,59 +7,44 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin:0; padding:0; background:#050505; color:#fff; font-family:sans-serif; text-align:center;
-               /* ИСПРАВЛЕНО: ТВОЙ НОВЫЙ ФОН ИГРЫ */
                background-image:url('new_bg.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
         h1 { color:#de9b35; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(222,155,53,0.3); font-family: 'Arial Black', sans-serif; letter-spacing: 2px; }
-        
         #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
         .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; gap: 10px; }
-        
         .column { width:33%; background:rgba(20,24,30,0.92); padding:15px; border-radius:4px; min-height:380px; border: 2px solid #1b2228; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); box-sizing: border-box; }
         .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1.5px; font-family: 'Arial Black', sans-serif; padding-bottom: 10px; border-bottom: 1px solid #2c3640; text-transform: uppercase; }
         .survivors h3 { color:#5d79ae; } .caught h3 { color:#ff8c00; } .dead h3 { color:#eb4b4b; }
-        
         .p-block { background:#12161c; padding:12px; margin:10px 0; border-radius:3px; border: 1px solid #232b35; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
         .p-info { text-align: left; }
         .p-name { font-weight: bold; font-size: 16px; display: block; }
         .p-stats { font-size: 11px; color: #64788c; display: block; margin-top: 3px; }
-        
         .survivors .p-block { border-left: 5px solid #5d79ae; } 
         .caught .p-block { border-left: 5px solid #ff8c00; background: rgba(30,20,10,0.4); } 
         .dead .p-block { border-left: 5px solid #eb4b4b; opacity: 0.6; } 
-
         #intro-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:11000; display:flex; justify-content:center; align-items:center; }
         .btn-green-start { padding:25px 90px; font-size:28px; font-weight:bold; background:#28a745; color:#fff; border:none; border-radius:50px; cursor:pointer; font-family:'Arial Black', sans-serif; box-shadow: 0 0 30px rgba(40,167,69,0.6); text-transform:uppercase; transition: transform 0.1s; }
-        
         #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:none; justify-content:center; align-items:center; flex-direction:column; }
         .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; }
         .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; text-transform: uppercase; }
-
-        /* ИСПРАВЛЕНО: КРОВАВО-КРАСНЫЙ БАН СТРОГО НА ВЕСЬ ЭКРАН */
         #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#8a1717 !important; z-index:99999; justify-content:center; align-items:center; flex-direction:column; box-sizing: border-box; }
         #alarm-screen h2 { font-size:32px; color:#fff; font-family:'Arial Black', sans-serif; margin-bottom:30px; animation: blink 0.6s infinite; text-shadow: 0 2px 10px #000; padding: 0 10px; }
-        
-        /* ВСПЛЫВАЮЩЕЕ ОКНО СУЖЕНИЯ ЗОНЫ DANGER ZONE */
         #zone-overlay { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99998; justify-content:center; align-items:center; flex-direction:column; }
         .zone-box { background:#1b2228; border:3px solid #ff8c00; padding:30px; border-radius:8px; max-width:90%; box-shadow:0 0 30px #ff8c00; }
         .zone-title { color:#ff8c00; font-family:'Arial Black', sans-serif; font-size:26px; margin-bottom:15px; }
         .zone-desc { font-size:20px; font-weight:bold; margin-bottom:25px; line-height:1.4; color:#fff; }
-        
         .btn-accept { padding:22px 60px; font-size:22px; font-weight:bold; background:#4caf50; color:#fff; border:2px solid #388e3c; border-radius:4px; cursor:pointer; font-family:'Arial Black', sans-serif; text-transform: uppercase; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
-
     <div id="intro-overlay">
         <button class="btn-green-start" onclick="initGameAudio()">НАЧАТЬ</button>
     </div>
-
     <div id="start-overlay">
         <div class="logo-title">МАТЧ НАЙДЕН!</div>
         <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
         <button class="btn-start" onclick="startGame()">ПРИНЯТЬ</button>
     </div>
-
     <div id="game-screen">
         <h1>ZOMBIE: SAVE OR DEATH</h1>
         <div class="tables">
@@ -68,8 +53,6 @@
             <div class="column dead"><h3>МЕРТВ</h3><div id="dead-list"></div></div>
         </div>
     </div>
-
-    <!-- ЭКРАН СУЖЕНИЯ ЗОНЫ С ТВОИМ ТЕКСТОМ -->
     <div id="zone-overlay">
         <div class="zone-box">
             <div class="zone-title">⚠️ СУЖЕНИЕ ЗОНЫ!</div>
@@ -77,28 +60,23 @@
             <button class="btn-accept" onclick="closeZoneAlert()">ПРИНЯТЬ ГРАНИЦЫ</button>
         </div>
     </div>
-
     <div id="alarm-screen">
         <h2 id="alarm-text">ВЫ БЫЛИ ЛИКВИДИРОВАНЫ!</h2>
         <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
-
     <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
     <audio id="menu-music" src="menu.mp3" preload="auto"></audio> 
     <audio id="alert-sound" src="Alert.mp3" preload="auto"></audio>
     <audio id="win-sound" src="win_speech.mp3" preload="auto"></audio>
-
     <script>
         const socket = io();
         const csgoSound = document.getElementById('csgo-sound');
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
         const winSound = document.getElementById('win-sound');
-        
         let intervalTimer = null;
         let lastSurvivorSignaled = false;
         let speechPlayedInThisRound = false;
-
         function initGameAudio() {
             csgoSound.currentTime = 0;
             csgoSound.loop = true;
@@ -106,7 +84,6 @@
             document.getElementById('intro-overlay').remove();
             document.getElementById('start-overlay').style.display = 'flex';
         }
-
         function startGame() {
             csgoSound.pause();
             csgoSound.loop = false;
@@ -115,44 +92,31 @@
             const gameScreen = document.getElementById('game-screen');
             gameScreen.style.display = 'block';
             setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
-
-            // ТАЙМЕР DANGER ZONE НА КАЖДЫЕ 5 МИНУТ (300 000 мс)
             if(intervalTimer) clearInterval(intervalTimer);
             intervalTimer = setInterval(() => {
-                // Сервер сам подаст сигнал о сужении зоны
                 socket.emit('trigger_zone_shrink');
             }, 300000); 
         }
-
-        // ПОЛУЧЕНИЕ СИГНАЛА СУЖЕНИЯ ЗОНЫ ОТ СЕРВЕРА
         socket.on('zone_shrink_alert', (data) => {
-            // Отыгрываем звук CS:GO ровно 1 раз (без повторов)
             csgoSound.loop = false;
             csgoSound.currentTime = 0;
             csgoSound.play().catch(e => console.log(e));
-
-            // Показываем окно с твоим текстом
             document.getElementById('zone-alert-text').innerText = data.message;
             document.getElementById('zone-overlay').style.display = 'flex';
         });
-
         function closeZoneAlert() {
             document.getElementById('zone-overlay').style.display = 'none';
         }
-
         socket.on('update_all_players', (players) => {
             document.getElementById('survivors-list').innerHTML = '';
             document.getElementById('caught-list').innerHTML = '';
             document.getElementById('dead-list').innerHTML = '';
-            
             let survivorCount = 0;
             let totalPlayersCount = 0;
-
             for (let name in players) {
                 totalPlayersCount++;
                 const pData = players[name];
                 if(pData.status === 'survivors') survivorCount++;
-
                 const div = document.createElement('div');
                 div.className = 'p-block';
                 div.innerHTML = `
@@ -163,7 +127,6 @@
                 `;
                 document.getElementById(`${pData.status}-list`).appendChild(div);
             }
-
             let isAllSurvivors = true;
             for(let name in players) {
                 if(players[name].status !== 'survivors') isAllSurvivors = false;
@@ -172,5 +135,18 @@
                 speechPlayedInThisRound = false;
                 lastSurvivorSignaled = false;
             }
-
             if (survivorCount === 1 && totalPlayersCount > 1) {
+                if (!speechPlayedInThisRound && !lastSurvivorSignaled) {
+                    menuMusic.pause();
+                    winSound.currentTime = 0;
+                    winSound.play().catch(e => console.log(e));
+                    lastSurvivorSignaled = true;
+                    speechPlayedInThisRound = true;
+                }
+            } else if (survivorCount !== 1) {
+                lastSurvivorSignaled = false;
+            }
+        });
+        socket.on('play_network_sound', (data) => {
+            menuMusic.pause();
+            alertSound.currentTime = 0;
