@@ -12,7 +12,6 @@
                background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
         h1 { color:#e61919; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(230,25,25,0.5); }
         
-        /* Главный экран со списками (изначально скрыт) */
         #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
         .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; }
         .column { width:32%; background:rgba(15,15,15,0.9); padding:10px; border-radius:8px; min-height:300px; border: 1px solid #222; }
@@ -25,16 +24,19 @@
         .caught .p-block { border-left-color: #ff8c00; }
         .dead .p-block { border-left-color: #555; opacity:0.5; }
         
-        /* СТАРТОВОЕ ОКНО НА ВЕСЬ ЭКРАН */
-        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); 
-                          backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+        /* СТАРТОВОЕ ОКНО В СТИЛЕ CS:GO */
+        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(10,10,10,0.95); 
+                          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
                           z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-        .logo-title { color:#e61919; font-size:36px; font-weight:bold; margin-bottom:40px; letter-spacing:2px; text-shadow: 0 0 15px #e61919; }
-        .btn-start { padding:20px 50px; font-size:24px; font-weight:bold; background:#e61919; color:#fff; 
-                     border:none; border-radius:50px; cursor:pointer; box-shadow: 0 0 20px #e61919; transition: transform 0.2s, box-shadow 0.2s; }
-        .btn-start:active { transform: scale(0.95); box-shadow: 0 0 10px #e61919; }
+        .logo-title { color:#fff; font-size:32px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; }
+        .logo-subtitle { color:#888; font-size:16px; margin-bottom:40px; }
+        
+        /* Кнопка ПРИНЯТЬ как в CS:GO */
+        .btn-start { padding:22px 60px; font-size:26px; font-weight:bold; background:#4caf50; color:#fff; 
+                     border:2px solid #388e3c; border-radius:5px; cursor:pointer; 
+                     box-shadow: 0 0 25px rgba(76,175,80,0.4); transition: all 0.2s ease; text-transform: uppercase; }
+        .btn-start:active { transform: scale(0.95); box-shadow: 0 0 10px rgba(76,175,80,0.6); background:#388e3c; }
 
-        /* Экран фатального звонка */
         #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#700; z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
         #alarm-screen h2 { font-size:32px; color:#fff; margin-bottom:30px; animation: blink 0.8s infinite; text-shadow: 0 0 10px #000; }
         .btn-accept { padding:20px 40px; font-size:22px; font-weight:bold; background:#32cd32; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow: 0 0 15px #32cd32; }
@@ -45,8 +47,9 @@
 
     <!-- СТАРТОВЫЙ ЭКРАН ИГРЫ -->
     <div id="start-overlay">
-        <div class="logo-title">ZOMBIE: SAVE OR DEATH</div>
-        <button class="btn-start" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+        <div class="logo-title">ИГРА НАЙДЕНА!</div>
+        <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
+        <button class="btn-start" onclick="startGame()">ПРИНЯТЬ ИГРУ</button>
     </div>
 
     <!-- ОСНОВНОЙ ИНТЕРФЕЙС ИГРЫ -->
@@ -59,30 +62,45 @@
         </div>
     </div>
 
-    <!-- ЭКРАН ЗВОНКА ТРЕВОГИ -->
     <div id="alarm-screen">
         <h2 id="alarm-text">ТЕБЯ ПОЙМАЛИ!</h2>
         <button class="btn-accept" onclick="stopAlarm()">ПРИНЯТЬ ЗАРАЖЕНИЕ</button>
     </div>
 
     <!-- АУДИО ТРЕКИ -->
+    <audio id="csgo-sound" src="csgo_accept.mp3" autoplay></audio>
     <audio id="menu-music" src="меню.mp3" loop></audio>
     <audio id="alert-sound" src="Alert.mp3" loop></audio>
 
     <script>
         const socket = io();
+        const csgoSound = document.getElementById('csgo-sound');
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
 
-        // КЛИК ПО КНОПКЕ НАЧАТЬ ИГРУ
+        // Пытаемся воспроизвести звук CS:GO сразу при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            csgoSound.play().catch(e => {
+                // Если браузер заблокировал автозвук, пустим его при первом шевелении пальцем по экрану
+                document.body.addEventListener('touchstart', () => { csgoSound.play(); }, { once: true });
+                document.body.addEventListener('click', () => { csgoSound.play(); }, { once: true });
+            });
+        });
+
+        // КЛИК ПО КНОПКЕ ПРИНЯТЬ
         function startGame() {
-            // 1. Включаем фоновую музыку (браузер теперь её на 100% пропустит)
-            menuMusic.play().catch(e => console.log("Ошибка аудио:", e));
+            // Останавливаем звук CS:GO, если он ещё играл
+            csgoSound.pause();
             
-            // 2. Красиво убираем заставку
-            document.getElementById('start-overlay').style.display = 'none';
+            // Включаем главную песню меню
+            menuMusic.play().catch(e => console.log(e));
             
-            // 3. Показываем саму игру
+            // ПОЛНОСТЬЮ УДАЛЯЕМ стартовую кнопку и окно с экрана, чтобы они исчезли
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.remove(); }, 500); // Удаляем элемент из кода сайта
+            
+            // Открываем таблицы игры
             const gameScreen = document.getElementById('game-screen');
             gameScreen.style.display = 'block';
             setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
@@ -104,10 +122,10 @@
         socket.on('play_network_sound', (data) => {
             menuMusic.pause();
             alertSound.currentTime = 0;
-            alertSound.play().catch(e => console.log("Блокировка звука:", e));
+            alertSound.play().catch(e => console.log(e));
             document.getElementById('alarm-text').innerText = data.message;
             document.getElementById('alarm-screen').style.display = 'flex';
-            if('vibrate' in navigator) navigator.vibrate([500, 300, 500]);
+            if('vibrate' in navigator) navigator.vibrate();
         });
 
         function stopAlarm() {
