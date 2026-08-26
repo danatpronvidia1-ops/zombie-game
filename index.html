@@ -74,13 +74,15 @@
 
     <div id="alarm-screen">
         <h2 id="alarm-text">ВЫ БЫЛИ ЛИКВИДИРОВАНЫ!</h2>
-        <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
+        <button class="btn-accept" onclick="stopAlarm()">ХОРОШО</button>
     </div>
 
     <!-- НАСТРОЙКА АУДИО С КОРРЕКТНЫМИ АТРИБУТАМИ -->
     <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
     <audio id="menu-music" src="menu.mp3" preload="auto"></audio> 
     <audio id="alert-sound" src="Alert.mp3" loop preload="auto"></audio>
+    <audio id="csgo-sound" src="click_sound.mp3"></audio>
+
 
     <script>
         const socket = io();
