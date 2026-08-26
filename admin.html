@@ -14,10 +14,14 @@
         button { padding: 12px 15px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
         .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
         .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
-        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; border-radius: 5px; }
-        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; border-radius: 5px; }
+        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; border-radius: 5px; color:#fff; border:none; }
+        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; border-radius: 5px; color:#fff; border:none; }
         .clear-panel { margin-top: 40px; padding: 10px; }
-        .btn-clear { background: #dc3545; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; }
+        .btn-clear { background: #dc3545; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; color:#fff; border:none; }
+        .rank-lbl { font-size:10px; padding:2px 6px; background:#444; border-radius:3px; margin-left:8px; color:#aaa; font-weight:bold; }
+        .lbl-silver { background:#555; color:#fff; }
+        .lbl-infected { background:#d35400; color:#fff; }
+        .lbl-zombie { background:#700; color:#ff3333; }
     </style>
 </head>
 <body>
@@ -28,7 +32,6 @@
     </div>
     <div class="list" id="players-list"></div>
 
-    <!-- КРАСНАЯ КНОПКА СБРОСА -->
     <div class="clear-panel">
         <button class="btn-clear" onclick="clearAll()">❌ ОЧИСТИТЬ ВСЕ СПИСКИ</button>
     </div>
@@ -40,13 +43,7 @@
             if(name) { socket.emit('add_player', { name: name }); document.getElementById('p-name').value = ''; }
         }
         function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
-        
-        // Функция отправки команды сброса на сервер
-        function clearAll() {
-            if(confirm("Вы точно хотите стереть всех игроков и начать заново?")) {
-                socket.emit('clear_all_players');
-            }
-        }
+        function clearAll() { if(confirm("Вы точно хотите стереть всех игроков?")) { socket.emit('clear_all_players'); } }
 
         socket.on('update_all_players', (players) => {
             const list = document.getElementById('players-list');
@@ -55,7 +52,13 @@
                 const status = players[name];
                 const div = document.createElement('div');
                 div.className = 'p-item';
-                div.innerHTML = `<span><strong>${name}</strong> [${status.toUpperCase()}]</span>`;
+                
+                let rTxt = 'SILVER I';
+                let rClass = 'lbl-silver';
+                if(status === 'caught') { rTxt = 'INFECTED'; rClass = 'lbl-infected'; }
+                if(status === 'dead') { rTxt = 'ZOMBIE BOSS'; rClass = 'lbl-zombie'; }
+
+                div.innerHTML = `<span><strong>${name}</strong><span class="rank-lbl ${rClass}">${rTxt}</span></span>`;
                 if(status === 'survivors') {
                     div.innerHTML += `<button class="btn-catch" onclick="move('${name}', 'caught')">ПОЙМАН</button>`;
                 } else if(status === 'caught') {
