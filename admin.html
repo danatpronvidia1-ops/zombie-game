@@ -15,20 +15,14 @@
         .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
         .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
         .p-info { display: flex; flex-direction: column; }
-        .p-name { font-weight: bold; }
-        .p-sub { font-size: 11px; color: #888; margin-top: 2px; }
-        .xp-btn { padding: 2px 8px; font-size: 12px; background: #444; margin-left: 3px; border-radius: 3px; display: inline-block; color:#fff; border:none; }
-        .btn-catch { background: #d35400; padding: 8px 12px; font-size: 13px; font-weight:bold; border-radius: 5px; color:#fff; border:none; cursor: pointer; box-shadow: 0 0 5px rgba(211,84,0,0.5); }
+        .p-name { font-weight: bold; font-size: 16px; }
+        .p-sub { font-size: 12px; color: #888; margin-top: 4px; }
+        .xp-btn { padding: 2px 8px; font-size: 12px; background: #444; margin-left: 3px; border-radius: 3px; display: inline-block; color:#fff; border:none; cursor: pointer; }
+        .btn-catch { background: #d35400; padding: 8px 12px; font-size: 13px; font-weight:bold; border-radius: 5px; color:#fff; border:none; cursor: pointer; }
         .btn-dead { background: #555; padding: 8px 12px; font-size: 13px; font-weight:bold; border-radius: 5px; color:#fff; border:none; cursor: pointer; }
         .clear-panel { margin-top: 40px; padding: 10px; }
         .btn-clear { background: #28a745; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; color:#fff; border:none; cursor: pointer; margin-bottom: 10px; }
         .btn-reset-all { background: #dc3545; width: 100%; max-width: 500px; padding: 10px; font-size: 14px; border-radius: 8px; color:#fff; border:none; cursor: pointer; opacity: 0.7; }
-        .rank-lbl { font-size:10px; padding:2px 6px; background:#444; border-radius:3px; margin-left:8px; color:#aaa; font-weight:bold; display: inline-block; }
-        .lbl-silver { background:#555; color:#fff; }
-        .lbl-sem { background:#34495e; color:#fff; }
-        .lbl-mg { background:#8e44ad; color:#fff; }
-        .lbl-lem { background:#d35400; color:#fff; }
-        .lbl-global { background: linear-gradient(135deg, #1d2b45 0%, #3a6096 50%, #1d2b45 100%); color:#fff; }
     </style>
 </head>
 <body>
@@ -41,7 +35,7 @@
 
     <div class="clear-panel">
         <button class="btn-clear" onclick="clearAll()">🔁 СЛЕДУЮЩИЙ РАУНД (ВЫЖИВШИМ +2 XP)</button>
-        <button class="btn-reset-all" onclick="resetDatabase()">⚠️ ПОЛНОЕ ОБНУЛЕНИЕ ВСЕХ РАНГОВ И СТАТИСТИКИ</button>
+        <button class="btn-reset-all" onclick="resetDatabase()">⚠️ ПОЛНОЕ ОБНУЛЕНИЕ ВСЕЙ СТАТИСТИКИ</button>
     </div>
 
     <script>
@@ -53,15 +47,7 @@
         function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
         function changeXP(name, amount) { socket.emit('change_player_xp', { name: name, amount: amount }); }
         function clearAll() { if(confirm("Начать новый раунд?")) { socket.emit('clear_all_players'); } }
-        function resetDatabase() { if(confirm("ВНИМАНИЕ! Это полностью сотрет ранги и всю историю побед всех игроков. Вы уверены?")) { socket.emit('reset_entire_database'); } }
-
-        function getRankConfig(xp) {
-            if (xp >= 100) return { name: 'GLOBAL ELITE', class: 'lbl-global' };
-            if (xp >= 60)  return { name: 'LEM', class: 'lbl-lem' };
-            if (xp >= 30)  return { name: 'MG I', class: 'lbl-mg' };
-            if (xp >= 10)  return { name: 'SILVER SEM', class: 'lbl-sem' };
-            return { name: 'SILVER I', class: 'lbl-silver' };
-        }
+        function resetDatabase() { if(confirm("Полностью стереть всю историю побед?")) { socket.emit('reset_entire_database'); } }
 
         socket.on('update_all_players', (players) => {
             const list = document.getElementById('players-list');
@@ -70,14 +56,13 @@
                 const pData = players[name];
                 const status = pData.status;
                 const xp = pData.xp || 0;
-                const rConf = getRankConfig(xp);
 
                 const div = document.createElement('div');
                 div.className = 'p-item';
 
                 div.innerHTML = `
                     <div class="p-info">
-                        <span><strong class="p-name">${name}</strong><span class="rank-lbl ${rConf.class}">${rConf.name}</span></span>
+                        <strong class="p-name">${name}</strong>
                         <span class="p-sub">
                             XP: ${xp} 
                             <button class="xp-btn" onclick="changeXP('${name}', 5)">+5</button>
@@ -89,7 +74,6 @@
                 `;
                 
                 if(status === 'survivors') {
-                    // НАША КНОПКА ТЕПЕРЬ ПОДПИСАНА НА ШТРАФ ДЛЯ НАГЛЯДНОСТИ
                     div.innerHTML += `<button class="btn-catch" onclick="move('${name}', 'caught')">ПОЙМАН (-5 XP)</button>`;
                 } else if(status === 'caught') {
                     div.innerHTML += `<button class="btn-dead" onclick="move('${name}', 'dead')">МЕРТВ</button>`;
