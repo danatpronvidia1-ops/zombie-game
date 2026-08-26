@@ -35,7 +35,7 @@
         .btn-green-start { padding:25px 90px; font-size:28px; font-weight:bold; background:#28a745; color:#fff; border:none; border-radius:50px; cursor:pointer; font-family:'Arial Black', sans-serif; box-shadow: 0 0 30px rgba(40,167,69,0.6); text-transform:uppercase; transition: transform 0.1s; }
         .btn-green-start:active { transform: scale(0.95); }
         
-        /* ВТОРОЙ ЭКРАН — CS:GO МАТЧ НАЙДЕН (Изначально скрыт) */
+        /* ВТОРОЙ ЭКРАН — CS:GO МАТЧ НАЙДЕН */
         #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(8,11,15,0.98); z-index:10000; display:none; justify-content:center; align-items:center; flex-direction:column; }
         .logo-title { color:#de9b35; font-size:36px; font-weight:bold; margin-bottom:5px; letter-spacing:3px; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 15px rgba(222,155,53,0.4); }
         .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
@@ -77,9 +77,10 @@
         <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
 
-    <audio id="csgo-sound" src="click_sound.mp3"></audio>
-    <audio id="menu-music" src="menu.mp3"></audio> 
-    <audio id="alert-sound" src="Alert.mp3" loop></audio>
+    <!-- НАСТРОЙКА АУДИО С КОРРЕКТНЫМИ АТРИБУТАМИ -->
+    <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
+    <audio id="menu-music" src="menu.mp3" preload="auto"></audio> 
+    <audio id="alert-sound" src="Alert.mp3" loop preload="auto"></audio>
 
     <script>
         const socket = io();
@@ -87,13 +88,19 @@
         const menuMusic = document.getElementById('menu-music');
         const alertSound = document.getElementById('alert-sound');
 
-        // ШАГ 1: КЛИК ПО ЗЕЛЕНОЙ КНОПКЕ НАЧАТЬ
+        // ЖЁСТКАЯ АКТИВАЦИЯ AUDIO CONTEXT КЛИКОМ ПО КНОПКЕ "НАЧАТЬ"
         function initGameAudio() {
-            // Включаем звук CS:GO (теперь телефон обязан его воспроизвести)
-            csgoSound.play().catch(e => console.log(e));
-            
-            // Зацикливаем звук CS:GO, пока висит окно «Принять»
+            // Принудительно запускаем звук CS:GO (браузер теперь 100% пропустит, так как был клик)
+            csgoSound.currentTime = 0;
             csgoSound.loop = true;
+            
+            let playPromise = csgoSound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Ошибка аудио устройства, пробуем еще раз...");
+                    csgoSound.play();
+                });
+            }
 
             // Удаляем зеленую кнопку с экрана
             document.getElementById('intro-overlay').remove();
@@ -102,7 +109,6 @@
             document.getElementById('start-overlay').style.display = 'flex';
         }
 
-        // ШАГ 2: КЛИК ПО ЗЕЛЕНОЙ КНОПКЕ ПРИНЯТЬ
         function startGame() {
             csgoSound.pause();
             csgoSound.loop = false;
