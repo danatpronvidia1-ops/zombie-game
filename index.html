@@ -47,16 +47,19 @@
 </head>
 <body>
 
+    <!-- ПЕРВАЯ ЗЕЛЕНАЯ КНОПКА -->
     <div id="intro-overlay">
         <button class="btn-green-start" onclick="initGameAudio()">НАЧАТЬ</button>
     </div>
 
+    <!-- ВТОРОЙ ЭКРАН: МАТЧ НАЙДЕН -->
     <div id="start-overlay">
         <div class="logo-title">МАТЧ НАЙДЕН!</div>
         <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
         <button class="btn-start" onclick="startGame()">ПРИНЯТЬ</button>
     </div>
 
+    <!-- ИНТЕРФЕЙС ИГРЫ -->
     <div id="game-screen">
         <h1>ZOMBIE: SAVE OR DEATH</h1>
         <div class="tables">
@@ -66,13 +69,14 @@
         </div>
     </div>
 
+    <!-- ЭКРАН БАНА -->
     <div id="alarm-screen">
         <h2 id="alarm-text">ВЫ БЫЛИ ЛИКВИДИРОВАНЫ!</h2>
         <button class="btn-accept" onclick="stopAlarm()">ПОДТВЕРДИТЬ БАН</button>
     </div>
 
+    <!-- АУДИО БЕЗ ОПАСНЫХ ТЕГОВ АВТОСТАРТА -->
     <audio id="csgo-sound" src="csgo_accept.mp3" preload="auto"></audio>
-    <!-- УБРАЛИ LOOP СЮДА ТОЖЕ, ТРЕК МЕНЮ ИГРАЕТ СТРОГО 1 РАЗ -->
     <audio id="menu-music" src="menu.mp3" preload="auto"></audio> 
     <audio id="alert-sound" src="Alert.mp3" preload="auto"></audio>
     <audio id="win-sound" src="win_speech.mp3" preload="auto"></audio>
@@ -88,15 +92,14 @@
         let lastSurvivorSignaled = false;
         let speechPlayedInThisRound = false;
 
-        function playIntro() { csgoSound.play().catch(e => console.log("Ждем клика")); }
-        window.addEventListener('DOMContentLoaded', playIntro);
-        document.body.addEventListener('click', playIntro, { once: true });
-        document.body.addEventListener('touchstart', playIntro, { once: true });
+        // ИСПРАВЛЕНО: Полностью удалены все фоновые попытки включить звук до клика пользователя. Скрипт не упадет.
 
         function initGameAudio() {
+            // Звук включается ТОЛЬКО здесь, строго по нажатию человека
             csgoSound.currentTime = 0;
             csgoSound.loop = true;
-            csgoSound.play().catch(e => console.log(e));
+            csgoSound.play().catch(e => console.log("Блокировка преодолена"));
+
             document.getElementById('intro-overlay').remove();
             document.getElementById('start-overlay').style.display = 'flex';
         }
@@ -156,7 +159,6 @@
                     menuMusic.pause();
                     winSound.currentTime = 0;
                     winSound.play().catch(e => console.log(e));
-                    winSound.onended = () => { /* После победной речи музыка тоже больше не включается */ };
                     lastSurvivorSignaled = true;
                     speechPlayedInThisRound = true;
                 }
@@ -174,3 +176,5 @@
         });
 
         function stopAlarm() {
+            alertSound.pause();
+            document.getElementById('alarm-screen').style.display = 'none';
