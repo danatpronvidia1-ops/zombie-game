@@ -8,7 +8,7 @@ app.use(express.static(__dirname));
 
 const DB_FILE = './database.json';
 let players = {};
-let dangerZoneText = "Зона сужается! Бегите к центру двора!"; // Текст по умолчанию
+let dangerZoneText = "Зона сужается! Бегите к центру двора!";
 
 if (fs.existsSync(DB_FILE)) {
     try { players = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch (e) { players = {}; }
@@ -33,15 +33,16 @@ io.on('connection', (socket) => {
         }
     });
 
-    // АДМИН ОБНОВЛЯЕТ ТЕКСТ СУЖЕНИЯ ЗОНЫ
+    // ИСПРАВЛЕНО: МОМЕНТАЛЬНЫЙ ТРИГГЕР ДЛЯ ВСЕХ ПРИ НАЖАТИИ КНОПКИ
     socket.on('set_zone_text', (data) => {
         if(data.text) {
             dangerZoneText = data.text;
             io.emit('update_zone_text', dangerZoneText);
+            // Сразу же шлем всем принудительное всплывающее окно со звуком!
+            io.emit('zone_shrink_alert', { message: dangerZoneText });
         }
     });
 
-    // ТРИГГЕР СУЖЕНИЯ ЗОНЫ РАЗ В 5 МИНУТ
     socket.on('trigger_zone_shrink', () => {
         io.emit('zone_shrink_alert', { message: dangerZoneText });
     });
@@ -87,4 +88,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => { console.log('Сервер Danger Zone запущен!'); });
+http.listen(PORT, () => { console.log('Сервер Danger Zone работает на максимальной скорости!'); });
