@@ -38,10 +38,6 @@
         .logo-subtitle { color:#64788c; font-size:14px; margin-bottom:50px; font-weight: bold; }
         
         .btn-start { padding:24px 80px; font-size:26px; font-weight:bold; background: linear-gradient(to bottom, #5a822f 0%, #3f5e20 100%); color:#fff; border:2px solid #6b9638; border-radius:4px; cursor:pointer; font-family: 'Arial Black', sans-serif; box-shadow: 0 5px 25px rgba(79,126,41,0.5); text-transform: uppercase; }
-
-        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(138,23,23,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
-        #alarm-screen h2 { font-size:36px; color:#fff; margin-bottom:40px; font-family:'Arial Black', sans-serif; animation: blink 0.6s infinite; }
-        .btn-accept { padding:22px 50px; font-size:22px; font-weight:bold; background:#4caf50; color:#fff; border:2px solid #388e3c; border-radius:4px; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -84,7 +80,7 @@
         
         let intervalTimer = null;
         let lastSurvivorSignaled = false;
-        let speechPlayedInThisRound = false; // ТРИГГЕР-ПРЕДОХРАНИТЕЛЬ ОТ ПОВТОРОВ
+        let speechPlayedInThisRound = false;
 
         function playIntro() { csgoSound.play().catch(e => console.log("Ждем клика")); }
         window.addEventListener('DOMContentLoaded', playIntro);
@@ -140,7 +136,6 @@
                 document.getElementById(`${pData.status}-list`).appendChild(div);
             }
 
-            // ЕСЛИ ВСЕ ИГРОКИ СБРОШЕНЫ (Новый раунд в админке), СБРАСЫВАЕМ ФЛАГ РЕЧИ
             let isAllSurvivors = true;
             for(let name in players) {
                 if(players[name].status !== 'survivors') isAllSurvivors = false;
@@ -150,9 +145,7 @@
                 lastSurvivorSignaled = false;
             }
 
-            // ПРОВЕРКА НА ПОСЛЕДНЕГО ВЫЖИВШЕГО
             if (survivorCount === 1 && totalPlayersCount > 1) {
-                // Если речь в этом раунде ЕЩЕ НЕ ИГРАЛА, запускаем её
                 if (!speechPlayedInThisRound && !lastSurvivorSignaled) {
                     menuMusic.pause();
                     winSound.currentTime = 0;
@@ -161,7 +154,7 @@
                     winSound.onended = () => { menuMusic.play().catch(e => console.log(e)); };
                     
                     lastSurvivorSignaled = true;
-                    speechPlayedInThisRound = true; // Блокируем повторные запуски речи
+                    speechPlayedInThisRound = true;
                 }
             } else if (survivorCount !== 1) {
                 lastSurvivorSignaled = false;
@@ -178,3 +171,9 @@
 
         function stopAlarm() {
             alertSound.pause();
+            document.getElementById('alarm-screen').style.display = 'none';
+            menuMusic.play().catch(e => console.log(e));
+        }
+    </script>
+</body>
+</html>
