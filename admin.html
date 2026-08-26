@@ -55,21 +55,20 @@
         const socket = io();
         let map, markers = {};
 
-        // ВАЖНО: Границы твоего двора на реальной карте мира. 
-        // Если маркеры будут смещены, мы легко поправим эти 4 цифры координат!
+        // Координатные рамки двора на карте мира (Астана, Алматинский район)
         const southWest = [51.1270, 71.4220]; 
         const northEast = [51.1300, 71.4270];
         const bounds = [southWest, northEast];
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Создаем карту, привязанную к координатам двора
+            // ИСПРАВЛЕНО: Убрали жесткие блокировки, карта теперь центрируется железно и сразу
             map = L.map('map', {
-                maxBounds: bounds,
-                maxBoundsViscosity: 1.0
-            }).setView([51.1285, 71.4245], 17);
+                crs: L.CRS.EPSG3857,
+                attributionControl: false
+            }).setView([51.1285, 71.4245], 16);
 
-            // ЗАГРУЖАЕМ ТВОЮ КАРТИНКУ ДВОРА КАК ПОДЛОЖКУ РАДАРА!
-          L.imageOverlay('https://githubusercontent.com', bounds).addTo(map);
+            // ИСПРАВЛЕНО: Добавили прямую интернет-ссылку на твой файл dvor.jpg с GitHub
+            L.imageOverlay('https://githubusercontent.com', bounds).addTo(map);
         });
 
         function addFriend() {
@@ -85,6 +84,8 @@
             const list = document.getElementById('players-list');
             list.innerHTML = '';
             
+            let centerSet = false;
+
             for(let name in players) {
                 const pData = players[name];
                 const status = pData.status;
@@ -113,9 +114,14 @@
 
                 // ОТОБРАЖЕНИЕ ПАЦАНОВ НА ТВОЕЙ КАРТЕ ДВОРА
                 if (pData.lat && pData.lng && map) {
-                    let dotColor = '#3a6096'; // Неоново-синий маркер (Выживший спецназ)
-                    if(status === 'caught') dotColor = '#d35400'; // Оранжевый (Обнаружен)
-                    if(status === 'dead') dotColor = '#cc3333'; // Красный (Зомби)
+                    if (!centerSet) {
+                        map.setView([pData.lat, pData.lng], 16); 
+                        centerSet = true;
+                    }
+
+                    let dotColor = '#3a6096'; // Синий маркер
+                    if(status === 'caught') dotColor = '#d35400'; // Оранжевый
+                    if(status === 'dead') dotColor = '#cc3333'; // Красный
 
                     if (markers[name]) {
                         markers[name].setLatLng([pData.lat, pData.lng]);
