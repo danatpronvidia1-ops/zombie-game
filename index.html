@@ -3,70 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель Зомби Мастера</title>
+    <title>Zombie: Save or Death</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="your_background.jpg">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #ff3333; font-size: 24px; }
-        .box { background: #222; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 8px; border: 1px solid #333; }
-        input { padding: 12px; font-size: 16px; width: 55%; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; }
-        button { padding: 12px 15px; font-size: 16px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 5px; margin-left: 5px; cursor: pointer; }
-        .list { margin-top: 20px; text-align: left; max-width: 500px; margin: 20px auto; }
-        .p-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; align-items: center; }
-        .btn-catch { background: #ff8c00; padding: 8px 12px; font-size: 14px; border-radius: 5px; color:#fff; border:none; }
-        .btn-dead { background: #666; padding: 8px 12px; font-size: 14px; border-radius: 5px; color:#fff; border:none; }
-        .clear-panel { margin-top: 40px; padding: 10px; }
-        .btn-clear { background: #dc3545; width: 100%; max-width: 500px; padding: 15px; font-size: 18px; border-radius: 8px; color:#fff; border:none; }
-        .rank-lbl { font-size:10px; padding:2px 6px; background:#444; border-radius:3px; margin-left:8px; color:#aaa; font-weight:bold; }
-        .lbl-silver { background:#555; color:#fff; }
-        .lbl-infected { background:#d35400; color:#fff; }
-        .lbl-zombie { background:#700; color:#ff3333; }
+        body { margin:0; padding:0; background:#000; color:#fff; font-family:sans-serif; text-align:center;
+               background-image:url('your_background.jpg'); background-position:center; background-size:contain; background-repeat:no-repeat; height:100vh; overflow:hidden; }
+        h1 { color:#e61919; font-size:28px; margin:0; padding-top:20px; text-shadow: 0 0 10px rgba(230,25,25,0.5); }
+        
+        #game-screen { display:none; opacity:0; transition: opacity 0.5s ease; }
+        .tables { display:flex; justify-content:space-around; margin-top:20px; padding:10px; }
+        .column { width:32%; background:rgba(15,15,15,0.9); padding:10px; border-radius:8px; min-height:300px; border: 1px solid #222; }
+        .column h3 { margin:5px 0; font-size:16px; letter-spacing: 1px; }
+        .survivors h3 { color:#32cd32; text-shadow: 0 0 5px rgba(50,205,50,0.3); } 
+        .caught h3 { color:#ff8c00; text-shadow: 0 0 5px rgba(255,140,0,0.3); } 
+        .dead h3 { color:#808080; }
+        
+        .p-block { background:#222; padding:12px; margin:8px 0; border-radius:5px; font-weight:bold; font-size:15px; border-left: 4px solid #444; display: flex; justify-content: space-between; align-items: center; padding-left:15px; padding-right:15px; }
+        .survivors .p-block { border-left-color: #32cd32; }
+        .caught .p-block { border-left-color: #ff8c00; }
+        .dead .p-block { border-left-color: #555; opacity:0.5; }
+        
+        /* КРУТЫЕ СТИЛИ ДЛЯ РАНГОВ */
+        .rank { font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .rank-silver { background: #444; color: #dfdfdf; border: 1px solid #666; box-shadow: 0 0 5px rgba(255,255,255,0.1); }
+        .rank-infected { background: #d35400; color: #fff; border: 1px solid #e67e22; box-shadow: 0 0 8px #ff8c00; animation: pulse 1.5s infinite; }
+        .rank-zombie { background: #500; color: #ff3333; border: 1px solid #700; text-shadow: 0 0 3px #000; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        #start-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(10,10,10,0.95); 
+                          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+                          z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+        .logo-title { color:#fff; font-size:32px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; }
+        .logo-subtitle { color:#888; font-size:16px; margin-bottom:40px; }
+        
+        .btn-start { padding:22px 60px; font-size:26px; font-weight:bold; background:#4caf50; color:#fff; 
+                     border:2px solid #388e3c; border-radius:5px; cursor:pointer; 
+                     box-shadow: 0 0 25px rgba(76,175,80,0.4); transition: all 0.2s ease; text-transform: uppercase; }
+        .btn-start:active { transform: scale(0.95); box-shadow: 0 0 10px rgba(76,175,80,0.6); background:#388e3c; }
+
+        #alarm-screen { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#700; z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
+        #alarm-screen h2 { font-size:32px; color:#fff; margin-bottom:30px; animation: blink 0.8s infinite; text-shadow: 0 0 10px #000; }
+        .btn-accept { padding:20px 40px; font-size:22px; font-weight:bold; background:#32cd32; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow: 0 0 15px #32cd32; }
+        @keyframes blink { 0% { opacity:1; } 50% { opacity:0.2; } 100% { opacity:1; } }
     </style>
 </head>
 <body>
-    <h1>ПАНЕЛЬ УПРАВЛЕНИЯ ИГРОЙ</h1>
-    <div class="box">
-        <input type="text" id="p-name" placeholder="Имя друга...">
-        <button onclick="addFriend()">ДОБАВИТЬ</button>
-    </div>
-    <div class="list" id="players-list"></div>
 
-    <div class="clear-panel">
-        <button class="btn-clear" onclick="clearAll()">❌ ОЧИСТИТЬ ВСЕ СПИСКИ</button>
+    <div id="start-overlay">
+        <div class="logo-title">ИГРА НАЙДЕНА!</div>
+        <div class="logo-subtitle">ZOMBIE: SAVE OR DEATH</div>
+        <button class="btn-start" onclick="startGame()">ПРИНЯТЬ ИГРУ</button>
     </div>
+
+    <div id="game-screen">
+        <h1>ZOMBIE: SAVE OR DEATH</h1>
+        <div class="tables">
+            <div class="column survivors"><h3>SURVIVORS</h3><div id="survivors-list"></div></div>
+            <div class="column caught"><h3>CAUGHT</h3><div id="caught-list"></div></div>
+            <div class="column dead"><h3>DEAD</h3><div id="dead-list"></div></div>
+        </div>
+    </div>
+
+    <div id="alarm-screen">
+        <h2 id="alarm-text">ТЕБЯ ПОЙМАЛИ!</h2>
+        <button class="btn-accept" onclick="stopAlarm()">ПРИНЯТЬ ЗАРАЖЕНИЕ</button>
+    </div>
+
+    <audio id="csgo-sound" src="csgo_accept.mp3" autoplay></audio>
+    <audio id="menu-music" src="menu.mp3"></audio> 
+    <audio id="alert-sound" src="Alert.mp3" loop></audio>
 
     <script>
         const socket = io();
-        function addFriend() {
-            const name = document.getElementById('p-name').value.trim();
-            if(name) { socket.emit('add_player', { name: name }); document.getElementById('p-name').value = ''; }
+        const csgoSound = document.getElementById('csgo-sound');
+        const menuMusic = document.getElementById('menu-music');
+        const alertSound = document.getElementById('alert-sound');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            csgoSound.play().catch(e => {
+                document.body.addEventListener('touchstart', () => { csgoSound.play(); }, { once: true });
+                document.body.addEventListener('click', () => { csgoSound.play(); }, { once: true });
+            });
+        });
+
+        function startGame() {
+            csgoSound.pause();
+            menuMusic.play().catch(e => console.log(e));
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.remove(); }, 500); 
+            const gameScreen = document.getElementById('game-screen');
+            gameScreen.style.display = 'block';
+            setTimeout(() => { gameScreen.style.opacity = '1'; }, 50);
         }
-        function move(name, status) { socket.emit('move_player', { name: name, status: status }); }
-        function clearAll() { if(confirm("Вы точно хотите стереть всех игроков?")) { socket.emit('clear_all_players'); } }
 
         socket.on('update_all_players', (players) => {
-            const list = document.getElementById('players-list');
-            list.innerHTML = '';
-            for(let name in players) {
+            document.getElementById('survivors-list').innerHTML = '';
+            document.getElementById('caught-list').innerHTML = '';
+            document.getElementById('dead-list').innerHTML = '';
+            for (let name in players) {
                 const status = players[name];
                 const div = document.createElement('div');
-                div.className = 'p-item';
+                div.className = 'p-block';
                 
-                let rTxt = 'SILVER I';
-                let rClass = 'lbl-silver';
-                if(status === 'caught') { rTxt = 'INFECTED'; rClass = 'lbl-infected'; }
-                if(status === 'dead') { rTxt = 'ZOMBIE BOSS'; rClass = 'lbl-zombie'; }
-
-                div.innerHTML = `<span><strong>${name}</strong><span class="rank-lbl ${rClass}">${rTxt}</span></span>`;
-                if(status === 'survivors') {
-                    div.innerHTML += `<button class="btn-catch" onclick="move('${name}', 'caught')">ПОЙМАН</button>`;
-                } else if(status === 'caught') {
-                    div.innerHTML += `<button class="btn-dead" onclick="move('${name}', 'dead')">МЕРТВ</button>`;
-                }
-                list.appendChild(div);
+                // СИСТЕМА РАНГОВ СО ЗНАЧКАМИ
+                let rankName = '⚪ SILVER I';
+                let rankClass = 'rank-silver';
+                if(status === 'caught') { rankName = '🟠 INFECTED'; rankClass = 'rank-infected'; }
+                if(status === 'dead') { rankName = '🔴 ZOMBIE BOSS'; rankClass = 'rank-zombie'; }
+                
+                div.innerHTML = `<span>${name}</span> <span class="rank ${rankClass}">${rankName}</span>`;
+                document.getElementById(`${status}-list`).appendChild(div);
             }
         });
+
+        socket.on('play_network_sound', (data) => {
+            menuMusic.pause();
+            alertSound.currentTime = 0;
+            alertSound.play().catch(e => console.log(e));
+            document.getElementById('alarm-text').innerText = data.message;
+            document.getElementById('alarm-screen').style.display = 'flex';
+            if('vibrate' in navigator) navigator.vibrate();
+        });
+
+        function stopAlarm() {
+            alertSound.pause();
+            document.getElementById('alarm-screen').style.display = 'none';
+            menuMusic.play().catch(e => console.log(e));
+        }
+
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
     </script>
 </body>
 </html>
